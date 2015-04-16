@@ -1,0 +1,70 @@
+/* Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License v3 or later.
+ * See LICENSE.txt for details. */
+
+/* TODO SaSS */
+
+html {
+	/* Requirements of sticky footer */
+	position: relative;
+	min-height: 100%;
+}
+
+body {
+	/* Don't overlap the navbars */
+	padding-top: 70px;
+	padding-bottom: 70px;
+}
+
+nav {
+	background-image: url('/images/plumage.png');
+	background-repeat: no-repeat;
+	background-size: 100px;
+}
+
+.navbar-brand {
+	/* Keep this readable if the screen is narrow enough for it to overlap
+	 * the mascot. */
+	text-shadow: 0 0 5px black,
+	             0 0 4px black,
+	             0 0 3px black,
+	             0 0 2px black,
+	             0 0 1px black;
+}
+
+@media (max-width: 767px) {
+	#navbar {
+		/* When the navbar folds out, do not let the mascot show through */
+		background-color: #222;
+	}
+}
+
+.navbar-btn {
+	/* Add a little more width so these are easier click targets */
+	min-width: 96px;
+}
+
+.footer {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	height: 50px;
+}
+
+.footer .container {
+	border-top: 1px solid #ddd;
+	padding-top: 9px;
+}
+
+/* Configuration edit page */
+
+/*@media (min-width: 768px) {
+	#cfg-name {
+		min-width: 256px;
+	}
+}*/
+
+#cfg-template {
+	height: 24em;
+}

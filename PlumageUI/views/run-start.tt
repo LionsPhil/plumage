@@ -1,0 +1,45 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # Copyright 2015 Richard Hull <richard.hull@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+				<ol class="nav navbar-nav">
+					<li><a href="/configurations/[% vars.cid %]" class="active">[% configuration.name | html %]</a></li>
+				</ol>
+[% END %]
+		<div class="container" role="main">
+			<h1>Run [% configuration.name | html %]</h1>
+			<form class="form-horizontal" method="post">
+				<div class="form-group"><div class="row">
+					<label for="run-client" class="col-sm-3 control-label">On</label>
+					<div class="col-sm-9">
+						<select name="client" id="run-client" class="form-control">
+							[% FOREACH client IN clients %]
+							<option value="[% client | html %]">[% client | html %]</option>
+							[% END %]
+						</select>
+					</div>
+				</div></div>
+				[% FOREACH parameter IN parameters %]
+				<div class="form-group"><div class="row">
+					<label for="run-param-[% parameter.name | html %]" class="col-sm-3 control-label">[% parameter.name | html %]</label>
+					<div class="col-sm-9">
+						<input type="text" class="form-control"
+							id="run-param-[% parameter.name | html %]" name="param-[% parameter.name | html %]"
+							value="[% parameter.default | html %]">
+					</div>
+				</div></div>
+				[% END %]
+				<div class="form-group"><div class="row">
+					<div class="col-sm-offset-3 col-sm-9">
+						<button type="submit" class="btn btn-primary">
+							Go
+							<span class="glyphicon glyphicon-play"></span>
+						</button>
+						<a class="btn btn-default" role="button" href="/configurations/[% vars.cid %]">Cancel</a>
+					</div>
+				</div></div>
+				<p class="well">[% configuration.comment | html %]</p>
+			</form>
+		</div>

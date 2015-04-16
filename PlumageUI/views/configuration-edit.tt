@@ -1,0 +1,95 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # Copyright 2015 Richard Hull <richard.hull@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+		<form class="form-horizontal" method="post" enctype="multipart/form-data">
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+				[% # TODO Convince this to use all available width
+				   #      http://stackoverflow.com/questions/18552714/
+				   #      or revert to being a regular form field in the page %]
+				<div class="navbar-form navbar-left form-group">
+					<label class="sr-only" for="cfg-name">Name</label>
+					<input type="text" id="cfg-name" class="form-control" name="name" value="[% configuration.name | html %]">
+				</div>
+				<div class="navbar-right">
+					<input type="submit" class="navbar-btn btn btn-primary" role="button" name="save" value="Save">
+					<a                   class="navbar-btn btn btn-default" role="button" href="/configurations/[% vars.cid %]">Cancel</a>
+				</div>
+[% END %]
+		<div class="container" role="main">
+			<div class="form-group">
+				<label for="cfg-comment">Comment</label>
+				<textarea class="form-control" id="cfg-comment" name="comment">[% configuration.comment | html %]</textarea>
+			</div>
+			[% SET readonly = '' ;
+			IF configuration.runs ;
+				readonly = 'readonly ' %]
+			<div class="alert alert-info" role="alert">
+				You cannot modify the template, parameters, or supporting files of this configuration because it has [% configuration.runs | html %] runs.
+				<!-- TODO Offer to make a copy -->
+			</div>
+			[% END %]
+			<div class="form-group">
+				<label for="cfg-template">Template</label>
+				<!-- TODO This should be preformatted, and taller by default (keep resizable in browsers which do such) -->
+				<textarea class="form-control" id="cfg-template" name="template" [% readonly %]>[% configuration.template | html %]</textarea>
+				<p class="help-block">Provide a Template::Toolkit template that expands to a Polygraph configuration.</p>
+			</div>
+			<div class="form-group">
+				<label>Parameters</label>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Default</th>
+						</tr>
+					</thead>
+					[% SET parameter_id = 0 ; FOREACH parameter IN parameters ;
+					   # Note that we do not fuss with preserving the original parameter IDs %]
+					<tbody>
+						<tr>
+							<td><input class="form-control" type="text" [% readonly %]
+								name="parameter-[% parameter_id %]-name"    value="[% parameter.name    | html %]"></td>
+							<td><input class="form-control" type="text" [% readonly %]
+								name="parameter-[% parameter_id %]-default" value="[% parameter.default | html %]"></td>
+						</tr>
+					</tbody>
+					[% parameter_id = parameter_id + 1 ; END %]
+					[% IF ! readonly %]
+					<tbody>
+						<tr>
+							<td><input class="form-control" type="text" name="parameter-[% parameter_id %]-name"></td>
+							<td><input class="form-control" type="text" name="parameter-[% parameter_id %]-default"></td>
+						</tr>
+					</tbody>
+					[% END %]
+				</table>
+				<p class="help-block">Parameter names are provided to the template as variables.</p>
+			</div>
+			<div class="form-group">
+				<label>Supporting files</label>
+				<ul>
+				[% FOREACH file IN supporting %]<!-- TODO style delete buttons as red X icons, left, no list dots; consider glyphicon-remove-sign -->
+					<li>
+						[% IF ! readonly %]<input type="submit" class="btn btn-danger" name="delete-[% file | html %]" value="Delete">[% END %]
+						[% file | html %]
+					</li>
+				[% END %]
+				</ul>
+				[% IF ! readonly %]
+				<div class="row">
+					<label for="cfg-supporting-upload" class="col-sm-2 control-label">Upload</label>
+					<div class="col-sm-10"><input type="file" id="cfg-supporting-upload" name="supporting-upload"></div>
+				</div><div class="row">
+					<label for="cfg-supporting-as" class="col-sm-2 control-label">as</label>
+					<div class="col-sm-8"><input type="text" class="form-control" id="cfg-supporting-as" name="supporting-as" placeholder="Filename; leave blank to leave as-is"></div>
+					<div class="col-sm-2"><input type="submit" class="btn btn-success" name="supporting-go" value="Upload"></div>
+				</div>
+				[% END %]
+				<p class="help-block">
+					Supporting files are placed alongside the configuration, so are useful for distribution tables, SSL configurations, etc.
+					Adding or removing supporting files will also save your other changes.
+				</p>
+			</div>
+		</div></form>

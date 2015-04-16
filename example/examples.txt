@@ -1,0 +1,11 @@
+host_configs
+  Configuration files for use by Plumage instances. These are put into place by
+  deploy.
+
+client_submission
+  A configuration template, supporting file, and shell script to submit them
+  to the client endpoint for integration testing.
+
+initscripts
+  A standard Debian init script which can be adapted (look at the variables
+  near the top) to run any of the four Plumage components.

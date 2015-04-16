@@ -1,0 +1,12 @@
+#!/bin/sh
+ENDPOINT="http://polyclient:5000/runs/"
+
+curl -i \
+	--form configuration.tt=@configuration.pg.tt \
+	--form supporting=@sizes.pgd \
+	--form notify=http://polymaster:5000/debug \
+	--form param_proxy_ip=10.0.13.36 \
+	--form param_proxy_port=800 \
+	--form param_clients=20 \
+	--form param_duration=2 \
+	-X POST "$ENDPOINT"

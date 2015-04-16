@@ -1,0 +1,51 @@
+#!/bin/sh
+# Copyright 2014-2015 Philip Boulain <philip.boulain@smoothwall.net>
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License v3 or later.
+# See LICENSE.txt for details.
+set -e
+
+# Deploys this code to a pair of polygraph machines (currently hardcoded).
+#
+# Expects these paths to exist on master, owned master:master:
+#  - /opt/plumage/
+#  - /var/lib/plumage/
+# Expects these paths to exist on client, owned client:client:
+#  - /opt/plumage/
+#  - /run/plumage/
+# Expects these paths to exist on server, owned server:server:
+#  - /opt/plumage/
+#  - /run/plumage/
+#
+# The ownership of /opt/plumage is a convenience for the sake of deploy.
+# It should not really be writable by the plumage processes.
+#
+# Note that this does NOT deploy plumage_run_suid nor the init scripts since
+# it requires root to set its permissions.
+
+USERIF=master@polymaster
+MASTER=master@polymaster
+CLIENT=client@polyclient
+SERVER=server@polyserver
+
+echo "*** Deploying to user interface" >&2
+scp -r PlumageUI     ${USERIF}:/opt/plumage/
+scp -r common/*      ${USERIF}:/opt/plumage/PlumageUI/
+scp example/host-configs/plumageui.json     ${USERIF}:/opt/plumage/PlumageUI/etc/
+
+echo "*** Deploying to master" >&2
+scp -r PlumageMaster ${MASTER}:/opt/plumage/
+scp -r common/*      ${MASTER}:/opt/plumage/PlumageMaster/
+scp example/host-configs/plumagemaster.json ${MASTER}:/opt/plumage/PlumageMaster/etc/
+
+echo "*** Deploying to client" >&2
+scp -r PlumageClient ${CLIENT}:/opt/plumage/
+scp -r common/*      ${CLIENT}:/opt/plumage/PlumageClient/
+scp example/host-configs/plumageclient.json ${CLIENT}:/opt/plumage/PlumageClient/etc/
+
+echo "*** Deploying to server" >&2
+scp -r PlumageServer ${SERVER}:/opt/plumage/
+scp -r common/*      ${SERVER}:/opt/plumage/PlumageServer/
+scp example/host-configs/plumageserver.json ${SERVER}:/opt/plumage/PlumageServer/etc/
+
+echo "*** Done" >&2

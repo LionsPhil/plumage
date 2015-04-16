@@ -1,0 +1,58 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # Copyright 2015 Richard Hull <richard.hull@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+				<ol class="nav navbar-nav">
+					<li><a href="/configurations/[% vars.cid %]" class="active">[% configuration.name | html %]</a></li>
+					<li><a href="/configurations/[% vars.cid %]/runs/[% vars.rid %]" class="active">Run #[% vars.rid %]</a></li>
+				</ol>
+				<div class="navbar-right">
+					[% IF run.has_report %]
+					<a class="navbar-btn btn btn-default" role="button"
+						href="/configurations/[% vars.cid | html%]/runs/[% vars.rid %]/report/">View report</a>
+					[% END %]
+					<!-- TODO abort button -->
+					<a class="navbar-btn btn btn-danger" role="button" href="/configurations/[% vars.cid %]/runs/[% vars.rid %]/delete">Delete</a>
+				</div>
+[% END %]
+		<div class="container" role="main">
+			<h1>[% configuration.name | html %] run #[% vars.rid | html %]</h1>
+			<form class="form-horizontal" method="post">
+				<div class="form-group"><div class="row">
+					<label class="col-sm-3 control-label">Started at</label>
+					<p class="col-sm-9 form-control-static">[% run.time | html %]</p>
+				</div></div>
+				<div class="form-group"><div class="row">
+					<label class="col-sm-3 control-label">On</label>
+					<p class="col-sm-9 form-control-static">[% run.client | html %]</p>
+				</div></div>
+				[% FOREACH parameter IN parameters_ordered %]
+				<div class="form-group"><div class="row">
+					<label class="col-sm-3 control-label">[% parameter | html %]</label>
+					<p class="col-sm-9 form-control-static">[% run.parameters.$parameter | html %]</p>
+				</div></div>
+				[% END %]
+				<div class="form-group"><div class="row">
+					<label class="col-sm-3 control-label">Result</label>
+					<p class="col-sm-9 form-control-static">
+						[% IF run.running %]
+						Still running
+						[% ELSE %]
+						[%   IF run.has_report %]
+						<a href="/configurations/[% vars.cid | html%]/runs/[% vars.rid %]/report/">Polygraph report</a>
+						[%   ELSE %]
+						No report available &#x2639;
+						[%   END %]
+						[% END %]
+					</p>
+				</div></div>
+				<div class="form-group">
+					<label for="run-comment">Comment</label>
+					<textarea class="form-control" id="run-comment" name="comment">[% run.comment | html %]</textarea>
+				</div>
+				<input type="submit" class="btn btn-primary pull-right" role="button" name="save" value="Save comment">
+				<!-- TODO Log message archive, when we can get an event stream archive -->
+			</form>
+		</div>

@@ -1,0 +1,24 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+[% END %]
+		<div class="container" role="main">
+			<h1>Configurations</h1>
+			<div id="configurations" class="list-group">
+				[% FOREACH configuration IN configurations %]
+				<a href="/configurations/[% configuration.id | html %]" class="list-group-item">
+					[% IF configuration.runs %]<span class="badge">[% configuration.runs | html %]</span>[% END %]
+					<h2 class="h4 list-group-item-heading">[% configuration.name | html %]</h2>
+					<p class="list-group-item-text">[% configuration.comment | html %]</p>
+				</a>
+				[% END %]
+				<a href="#" class="list-group-item" id="add-configuration">
+					<h2 class="h4 list-group-item-heading">
+						Add new
+						<span class="pull-right text-success"><span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span></span>
+					</h2>
+				</a>
+			</div>
+		</div>

@@ -1,0 +1,54 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # Copyright 2015 Richard Hull <richard.hull@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+				<ol class="nav navbar-nav">
+					<li><a href="/configurations/[% vars.cid %]" class="active">[% configuration.name | html %]</a></li>
+				</ol>
+				<div class="navbar-right">
+					<a class="navbar-btn btn btn-success" role="button" href="/configurations/[% vars.cid %]/runs/new">Run</a>
+					<a class="navbar-btn btn btn-warning" role="button" href="/configurations/[% vars.cid %]/edit"    >Edit</a>
+					<a class="navbar-btn btn btn-danger"  role="button" href="/configurations/[% vars.cid %]/delete"  >Delete</a>
+				</div>
+[% END %]
+		<div class="container" role="main">
+			<h1>[% configuration.name | html %]</h1>
+			<p class="lead">[% configuration.comment | html %]</p>
+			<h2>Runs</h2>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>Date</th>
+						<th>Comment</th>
+						[%- FOREACH parameter IN parameters %]
+						<th>[% parameter | html %]</th>
+						[%- END -%]
+						<th>Result</th>
+					</tr>
+				</thead>
+				<tbody>
+					<!-- TODO consider making whole table rows clickable, not just result column links; possibly lose the whole column -->
+					[% FOREACH run IN runs %]
+					<tr>
+						<td>[% run.time | html %]</td>
+						<td>[% run.comment | html %]</td>
+						[%- FOREACH parameter IN parameters %]
+						<td>[% run.parameters.$parameter %]</td>
+						[%- END -%]
+						<td>
+							[% IF run.running %]
+							<a href="/configurations/[% vars.cid %]/runs/[% run.id %]">Running</a>
+							[% ELSE %]
+							<a href="/configurations/[% vars.cid %]/runs/[% run.id %]">Completed</a>
+							[%   IF run.has_report %]
+							(<a href="/configurations/[% vars.cid | html%]/runs/[% run.id %]/report/">report</a>)
+							[%   END %]
+							[% END %]
+						</td>
+					</tr>
+					[% END %]
+				</tbody>
+			</table>
+		</div>

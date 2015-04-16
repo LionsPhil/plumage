@@ -1,0 +1,16 @@
+#!/bin/sh
+# Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License v3 or later.
+# See LICENSE.txt for details.
+
+# Quick shell script to run library unit tests that work even on a machine
+# without Dancer (i.e. skips route tests)
+
+set -e
+set -x
+
+( cd common/ && prove -l -v t/*.t )
+( cd PlumageServer/ && prove -l -I../common/lib/ -v t/003_serverrun.t )
+( cd PlumageClient/ && prove -l -I../common/lib/ -v t/003_clientrun.t )
+( cd PlumageMaster/ && prove -l -I../common/lib/ -v t/003_model.t )

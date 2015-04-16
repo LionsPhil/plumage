@@ -1,0 +1,444 @@
+#!/usr/bin/perl
+# Copyright 2014-2015 Philip Boulain <philip.boulain@smoothwall.net>
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License v3 or later.
+# See LICENSE.txt for details.
+use warnings;
+use strict;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use Getopt::Long qw(:config auto_version auto_help);
+use Pod::Usage;
+
+use File::Slurp;
+use HTTP::Request::Common;
+use IO::Dir;
+use IPC::Run qw();
+use JSON;
+use LWP::UserAgent;
+use POSIX qw(:sys_wait_h);
+use Sys::CPU;
+use Try::Tiny;
+
+use Plumage::AsyncProcess; # only for kill_kill
+use Plumage::Common;
+
+# (NB: --help and usage errors will only show the SYNOPSIS section)
+
+=head1 SYNOPSIS
+
+plumage_run <report_name> <state_directory> <notify_uri>
+
+Drive the Polygraph client and server (via its REST API) for a run.
+This is a blocking script which handles some necessary delays unsuitable for an asynchronous Dancer application.
+It is not intended to be executed manually.
+
+The C<report_name> is for Polygraph's purposes.
+It will bake it into the generated HTML.
+Stick to simple alphanumerics, underscores rather than spaces (it will do unsafe shell expansions with it).
+
+The C<notify_uri> will be POSTed to when plumage_run exits, except for very early failures.
+It can be blank to disable this, but cannot be missing.
+
+=head1 STATE DIRECTORY
+
+The state directory is the API between this and the Plumage Client REST API.
+Its contents are:
+
+ ./configuration/
+     configuration.pg - REQUIRED: main configuration file to use
+	 *                - supporting files may be provided (hidden ignored)
+ ./client/
+     clientN.pid      - PID of each client process (if available)
+     consoleN.log     - Realtime console output from each client process
+     binaryN.log      - Binary log from each client process
+ ./server/
+     monitor.txt      - Monitoring URL for the run in PlumageServer
+     consoleN.log     - Final console output from each server process
+     binaryN.log      - Binary log from each server process
+ ./report/
+     *                - Generated Polygraph report after the run
+ done                 - Created by plumage_run once the report is ready
+
+The configuration must exist when plumage_run is started; the rest are created by it.
+During the run, the contents of the client directory, and the monitoring URL exposed from the server, can be used to provide live state feedback.
+Once it exits, the logs and report may be read/copied.
+
+(Note that this does *not* pull the server console log live, only for archival at the end.
+Use the monitoring URL for dynamic frontends.
+The monitoring URL will stop working once the run is complete since the run will be cleaned from the server.)
+
+You may SIGINT this process to attempt to terminate the run cleanly (including the server side).
+It may take a few seconds to stop.
+
+Returns zero if the run succeeds to the extent that a report is generated, nonzero otherwise.
+
+=cut
+
+# This is purely so --help works and --other isn't taken as a state directory
+GetOptions() or pod2usage({ -exitval => 1 });
+
+# Configuration defaults
+our $POLYGRAPH_CLIENT_BINARY   = '/usr/bin/polygraph-client';
+our $POLYGRAPH_REPORTER_BINARY = '/usr/bin/polygraph-reporter';
+our $MV_BINARY                 = '/bin/mv';
+our $SERVER_BASE               = 'http://polyserver:5000/runs/';
+our $AGENT_PREFIX              = '127.0.1';
+our $AGENT_OCTET_MIN           = 2;
+our $AGENT_OCTET_MAX           = 17;
+
+# Load configuration overrides
+{
+	my $config_filename = "$FindBin::Bin/../etc/plumageclient.json";
+	my $config = decode_json(read_file($config_filename));
+	$POLYGRAPH_CLIENT_BINARY   = $config->{'polygraph_client_binary'  } // $POLYGRAPH_CLIENT_BINARY;
+	$POLYGRAPH_REPORTER_BINARY = $config->{'polygraph_reporter_binary'} // $POLYGRAPH_REPORTER_BINARY;
+	$MV_BINARY                 = $config->{'mv_binary'}                 // $MV_BINARY;
+	$SERVER_BASE               = $config->{'server_base'}               // $SERVER_BASE;
+	$AGENT_PREFIX              = $config->{'agent_prefix'}              // $AGENT_PREFIX;
+	$AGENT_OCTET_MIN           = $config->{'agent_octet_min'}           // $AGENT_OCTET_MIN;
+	$AGENT_OCTET_MAX           = $config->{'agent_octet_max'}           // $AGENT_OCTET_MAX;
+}
+
+my $report_name = shift @ARGV;
+my $statedir = shift @ARGV;
+my $notify_uri = shift @ARGV;
+defined $notify_uri or pod2usage({ -exitval => 1 });
+
+die "Report name may upset Polygraph; use [a-zA-Z0-9.:_-].\n"
+	unless $report_name =~ /^[a-zA-Z0-9.:_-]+$/;
+
+die "State directory '$statedir' isn't a directory.\n"
+	unless -d $statedir;
+chdir $statedir
+	or die "Couldn't change to state directory '$statedir'.\n";
+
+my $statedir_ready = 1; # see the END block
+
+# Prepare user agent for driving the server REST API
+my $ua = LWP::UserAgent->new();
+$ua->timeout(10);
+$ua->env_proxy();
+
+# Register signal handler
+my $interrupted = 0;
+$SIG{INT} = sub {
+	warn "Signal caught; trying to bail ASAP...\n";
+	$interrupted = 1;
+};
+
+# Set up an END block to post our notification
+END {
+	# Mark the state directory as quiet, if we got that far
+	write_file('done', '') if $statedir_ready;
+
+	# Because we're an END block, $notify_uri may not yet be read in
+	if(($notify_uri // '') ne '') {
+		print STDERR "--- Notifying run termination ($notify_uri)\n";
+		# Don't try to use $ua here; destructors run first
+		my $notify_ua = LWP::UserAgent->new();
+		$notify_ua->timeout(5); # Very likely interrupted; be fast
+		$notify_ua->env_proxy();
+		my $response = $notify_ua->post($notify_uri); # Ain't Nobody
+		warn 'Notify failed: '.$response->message()."\n"
+			unless $response->is_success();
+	}
+}
+
+# Read in the configuration
+# (Deliberately do this up-front rather than let LWP do it to control failure)
+print STDERR "--- Reading configuration\n";
+my $configuration = read_file('configuration/configuration.pg');
+my @supporting;
+{
+	my $configdir = IO::Dir->new('configuration');
+	die "Couldn't open configuration directory: $!\n" unless defined $configdir;
+	foreach my $file ($configdir->read()) {
+		next if $file =~ /^\./;
+		next if $file eq 'configuration.pg';
+		# We build these up in the format needed for HTTP::Request::Common below
+		push @supporting, 'supporting';
+		push @supporting, [
+			undef, $file,
+			Content_Type => 'application/octet-stream',
+			Content => scalar read_file("configuration/$file"),
+		];
+	}
+}
+
+# Start creating our state so we can bail before we have things to kill
+mkdir 'client' or die "Can't create client state directory: $!\n";
+mkdir 'server' or die "Can't create server state directory: $!\n";
+# report is created by renaming the Polygraph report output
+
+# Push the configuration to the server to start the run
+print STDERR "--- Starting servers\n";
+die "Interrutped!\n" if $interrupted; # last bail-out point before we start creating state
+my $monitor_uri;
+{
+	my $response = $ua->post($SERVER_BASE,
+		Content_Type => 'form-data',
+		Content => [
+			configuration => [
+				undef, 'configuration.pg',
+				Content_Type => 'text/plain',
+				Content => $configuration,
+			],
+			@supporting, # flattens into more pairs; remember, => is a comma
+		],
+	);
+
+	die 'Starting server job failed: '.$response->message()."\n"
+		unless $response->is_success();
+
+	$monitor_uri = $response->header('Location');
+
+	die "Didn't get a monitoring URI despite apparent success!\n"
+		unless defined $monitor_uri;
+}
+
+write_file('server/monitor.txt', "$monitor_uri\n");
+
+# From this point on, go into a try block to do cleanup in finally.
+# (For a quick script this is probably cleaner than d'tors.)
+my @client_pids;
+# This keeps track of which clients have already been reaped (e.g. if one
+# client jams up and the run is aborted).
+my %client_reaped;
+# List of local binary log filenames
+my @binary_logs;
+
+try {
+
+	# Sleep a little to allow the server processes to spin up and generate their
+	# certificates. There's not really a good signal for when this is, short of
+	# something like parsing their console output.
+	print STDERR "--- Waiting for servers to start\n";
+	for(my $seconds = 20; $seconds > 0; $seconds -= 5) {
+		print STDERR "    --- $seconds seconds\n";
+		die "Interrupted!\n" if $interrupted;
+		sleep 5;
+	}
+	die "Interrupted!\n" if $interrupted;
+
+	# Work out how many clients, using which addresses
+	print STDERR "--- Starting clients\n";
+	my @ranges = Plumage::Common::ip_ranges(
+		$AGENT_PREFIX, $AGENT_OCTET_MIN, $AGENT_OCTET_MAX,
+		Sys::CPU::cpu_count());
+
+	# Start the client processes
+	# Do this ourselves again, as for PolygraphServerRun, since we want the PID
+	# for reporting to external observers even if an IPC::Run handle would do
+	# for ourselves, and also because Run's pump()ing actually works against our
+	# desired "let them run until termination and just blat output to files"
+	# asynchronous behaviour.
+	foreach my $range (@ranges) {
+		my $pnum = scalar @client_pids;
+		my $pidfile     = "client/client$pnum.pid";
+		my $binary_log  = "client/binary$pnum.log";
+		my $console_log = "client/console$pnum.log";
+
+		my $pid = fork();
+		die "Couldn't fork: $!\n" unless defined $pid;
+		if(!$pid) {
+			try {
+				print STDERR "    --- $pnum (PID $$): $range\n";
+
+				# Restore signal handler; we can actually race this, so then
+				# check the interrupted flag and if we'd been spawned and INT'd
+				# before we'd got this far, exit before we get to exec'ing.
+				$SIG{INT} = 'DEFAULT';
+				die "Client interrupted before exec!\n" if $interrupted;
+
+				# Re-open filehandles so we detach from the parent
+				open STDIN,  '<',  '/dev/null';
+				open STDOUT, '>',  $console_log;
+				open STDERR, '>&', \*STDOUT;
+
+				# Now become Polygraph
+				# Note that the binary log is written from Polygraph's point of
+				# view, which is chdir'd into configuration/ so that it can
+				# find supporting files.
+				chdir 'configuration' or die "Chdir for Polygraph failed: $!\n";
+				exec ($POLYGRAPH_CLIENT_BINARY,
+					'--config', 'configuration.pg',
+					'--verb_lvl', '10',
+					'--log', "../$binary_log",
+					'--fake_hosts', $range);
+				die "Exec of Polygraph client failed: $!\n";
+			} catch {
+				# It is vitally important that we do not actually get to the
+				# outer exception handler, because that is parent-process
+				# context. Stop dead. No d'tors, no END blocks, just bail.
+				warn $_;
+				POSIX::_exit(1);
+			};
+		}
+		push @client_pids, $pid;
+		push @binary_logs, $binary_log;
+
+		# Record the pid of the client process (with newline for convention)
+		write_file($pidfile, "$pid\n");
+	}
+
+	# Wait for/reap the client processes
+	# This is where we may park up for a multi-hour run.
+	print STDERR "--- Waiting for clients to finish\n";
+	my $pnum = 0;
+	foreach my $pid (@client_pids) {
+		# And now for the bad news.
+		# Perl will automatically retry a wait[pid] call which is interrupted
+		# by a signal, and it's generally unsafe to try to throw exceptions
+		# from signal handlers. So to actually be interrupted by interrupts so
+		# that we can abort, we have to poll, because we can't inject a test
+		# for $interrupted upon EINTR.
+		my $reaped = -1;
+		my $return;
+		while($reaped <= 0) {
+			# Throw if the signal handler set the interrupt flag
+			die "Interrupted!\n" if $interrupted;
+			# Non-blocking poll for child exit (Linux returns 0, not -1, here)
+			$reaped = waitpid($pid, WNOHANG);
+			$return = $?;
+			# Only sleep if we're still waiting.
+			# This is a local check, so we can poll more frequently.
+			sleep 1 if $reaped <= 0;
+		}
+
+		$client_reaped{$pid} = 1;
+
+		die "Polygraph client $pnum (PID $pid) has returned nonzero!\n"
+			if $return;
+
+		++$pnum; # Only used for error-reporting here
+	}
+
+	# Wait for the server to finish
+	print STDERR "--- Waiting for servers to finish\n";
+	my $run_uri;
+	while(!defined $run_uri) {
+		# We write this one out longhand so that we can use simple_request.
+		# We use simple_request because we do *not* want to automatically
+		# follow the 303.
+		my $response = $ua->simple_request(GET $monitor_uri);
+
+		if($response->code() == 303) {
+
+			# The run is complete and the server is telling us where it is
+			$run_uri = $response->header('Location');
+			die "Didn't get a run URI despite apparent success!\n"
+				unless defined $run_uri;
+
+		} elsif($response->is_success()) {
+
+			# The server is still running, wait a bit and keep polling.
+			# We might be here for a few minutes as it takes a while for them
+			# to settle down and time out.
+			die "Interrupted!\n" if $interrupted;
+			sleep 5;
+
+		} else {
+
+			die 'Error from server while polling job: '
+				.$response->message()."\n"
+				unless $response->is_success();
+
+		}
+	}
+
+	# Fetch the server logs
+	print STDERR "--- Fetching server logs\n";
+
+	my $run_metadata = $ua->get($run_uri);
+	die 'Error fetching server run metadata: '.$run_metadata->message()."\n"
+		unless $run_metadata->is_success();
+
+	my $metadata = decode_json($run_metadata->decoded_content());
+	(ref $metadata->{console} eq 'ARRAY')
+		or die "No console URIs in run metadata!\n";
+	$pnum = 0;
+	foreach my $console_uri (@{$metadata->{console}}) {
+		die "Interrupted!\n" if $interrupted;
+# TODO Actually doing this is temporarily disabled while the console-streaming is resolved
+#		my $response = $ua->get($console_uri);
+#		die 'Error fetching server console log: '.$response->message()."\n"
+#			unless $response->is_success();
+#		write_file("server/console$pnum.log", $response->decoded_content());
+		++$pnum;
+	}
+
+	(ref $metadata->{log} eq 'ARRAY')
+		or die "No log URIs in run metadata!\n";
+	$pnum = 0;
+	foreach my $log_uri (@{$metadata->{log}}) {
+		die "Interrupted!\n" if $interrupted;
+		my $response = $ua->get($log_uri);
+		die 'Error fetching server binary log: '.$response->message()."\n"
+			unless $response->is_success();
+		write_file("server/binary$pnum.log", $response->decoded_content());
+		push @binary_logs, "server/binary$pnum.log";
+		++$pnum;
+	}
+
+} catch {
+
+	warn "Exception caught; cleaning up: $_";
+	$interrupted = 1;
+
+} finally {
+
+	# Kill and reap outstanding clients, if running
+	print STDERR "--- Killing clients\n";
+	my @victims = grep { ! $client_reaped{$_} } @client_pids;
+	if(@victims) {
+		Plumage::AsyncProcess::kill_kill(2, @victims);
+		foreach my $pid (@victims) { waitpid $pid, 0; }
+	}
+
+	# Delete the run from the server (which will stop processes if needed)
+	print STDERR "--- Deleting server state\n";
+	my $response = $ua->delete($monitor_uri);
+	# Try::Tiny gets *very* upset if you try to throw within a finally {}
+	# block, so degrade this to an interrupt.
+	unless($response->is_success()) {
+		warn 'Error deleting server state: '.$response->message()."\n";
+		$interrupted = 1;
+	}
+
+};
+# This one also causes us to exit if we caught an exception
+die "Interrupted or died!\n" if $interrupted;
+
+# Generate the polygraph report
+# This is prompt enough to not need interrupting
+print STDERR "--- Generating report\n";
+
+system(
+	$POLYGRAPH_REPORTER_BINARY,
+	'--label', $report_name,
+	@binary_logs,
+) == 0
+	or die "Polygraph report generation failed: $?\n";
+
+# File::Copy::move can't handle moving directories across filesystems:
+# http://www.perlmonks.org/?node_id=728153
+# So use the mv binary, which can.
+{
+	my ($in, $out, $err) = ('', '', '');
+	IPC::Run::run(
+		[ $MV_BINARY,
+			'--no-clobber',
+			"/tmp/polyrep/$report_name",
+			'report' ],
+		\$in, \$out, \$err
+	) or die "Moving report into place failed: $?, $err";
+	warn "Moving report caused warning: $err" if $err;
+}
+
+# And done
+print STDERR "--- Run complete\n";
+exit 0;
+

@@ -1,0 +1,33 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+				<ol class="nav navbar-nav">
+					<li><a href="/configurations/[% vars.cid %]" class="active">[% configuration.name | html %]</a></li>
+					<li><a href="/configurations/[% vars.cid %]/runs/[% vars.rid %]" class="active">Run #[% vars.rid %]</a></li>
+				</ol>
+[% END %]
+		<div class="container" role="main">
+			<h1>Delete [% configuration.name | html %]?</h1>
+			<p class="lead">
+				Are you sure you want to delete "[% configuration.name | html %]" run [% vars.rid %]?
+			</p>
+			[% IF run.running %]
+			<div class="alert alert-info" role="alert"><strong>This run is still in progress.</strong> Deleting it will also abort the run.</div>
+			[% END %]
+			[% IF run.has_report %]
+			<div class="alert alert-warning" role="alert"><strong>The report will also be deleted.</strong> This run completed and generated a Polygraph report, which you will also be deleting.</div>
+			[% END %]
+			[% IF run.comment %]
+			<h2 class="h4">Comment</h2>
+			<p class="well">[% run.comment | html %]</p>
+			[% END %]
+			<p>
+				This operation cannot be undone.
+			</p>
+			<form class="form-horizontal" method="post">
+				<input type="submit" class="btn btn-danger" role="button" value="Delete">
+				<a class="btn btn-default" role="button" href="/configurations/[% vars.cid | html %]/runs/[% vars.rid %]">Cancel</a>
+			</form>
+		</div>

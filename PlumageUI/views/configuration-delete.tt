@@ -1,0 +1,23 @@
+[% # Copyright 2015 Philip Boulain <philip.boulain@smoothwall.net>
+   # This program is free software: you can redistribute it and/or modify it under
+   # the terms of the GNU Affero General Public License v3 or later.
+   # See LICENSE.txt for details. -%]
+[% PROCESS include/navbar.tt ; WRAPPER navbar %]
+				<ol class="nav navbar-nav">
+					<li><a href="/configurations/[% vars.cid %]" class="active">[% configuration.name | html %]</a></li>
+				</ol>
+[% END %]
+		<div class="container" role="main">
+			<h1>Delete [% configuration.name | html %]?</h1>
+			<p class="lead">
+				Are you sure you want to delete "[% configuration.name | html %]"[%
+				IF configuration.runs %], and the results of all <strong>[% configuration.runs | html %] runs</strong> of it[% END
+				%]?
+			</p><p>
+				This operation cannot be undone.
+			</p>
+			<form class="form-horizontal" method="post">
+				<input type="submit" class="btn btn-danger" role="button" value="Delete">
+				<a class="btn btn-default" role="button" href="/configurations/[% vars.cid | html %]">Cancel</a>
+			</form>
+		</div>

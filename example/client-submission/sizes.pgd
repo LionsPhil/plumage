@@ -1,0 +1,13 @@
+# Nonsense made-up size distribution for example
+# Note syntax is a little different from normal Polygraph:
+# http://www.web-polygraph.org/docs/reference/tabdistr.html
+#num_distr num = { # Use this when passing to distr-test
+size_distr szdstPowerish = {
+	        0	  10
+	       :9	  10
+	      :99	 100
+	     :999	1000
+	    :9999	 100
+	   :99999	  10
+	  :999999	   1
+} # }
