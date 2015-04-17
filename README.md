@@ -2,10 +2,10 @@
 A web frontend for the Web Polygraph proxy testing tool.
 
 More complete documentation is to follow!
-To get started see the quick-and-dirty [INSTALL guide](/blob/master/INSTALL).
+To get started see the quick-and-dirty [INSTALL guide](INSTALL).
 
 # License
-Plumage is licensed under the [GNU Affero General Public License v3](/blob/master/LICENSE).
+Plumage is licensed under the [GNU Affero General Public License v3](LICENSE).
 
 # Thanks
 Development of version 0.1 of Plumage was supported by [Smoothwall Ltd.](http://www.smoothwall.com/)
