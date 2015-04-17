@@ -28,9 +28,9 @@ fi
 #      defaults file (earlier) so hacking the init script is not required.
 PLUMAGE_PORT=5000
 [ "$PLUMAGE_ROLE" = "UI"     ] && PLUMAGE_PORT=80
-[ "$PLUMAGE_ROLE" = "Master" ] && PLUMAGE_PORT=5000
-[ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_PORT=5000
-[ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_PORT=5000
+[ "$PLUMAGE_ROLE" = "Master" ] && PLUMAGE_PORT=5001
+[ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_PORT=5002
+[ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_PORT=5003
 
 PLUMAGE_USER=nobody
 [ "$PLUMAGE_ROLE" = "UI"     ] && PLUMAGE_USER=master

@@ -6,7 +6,7 @@
 	"polygraph_client_binary": "/usr/bin/polygraph-client",
 	"polygraph_reporter_binary": "/usr/bin/polygraph-reporter",
 	"mv_binary": "/bin/mv",
-	"server_base": "http://polyserver:5000/runs/",
+	"server_base": "http://polyserver:5003/runs/",
 	"agent_prefix": "10.80.1",
 	"agent_octet_min": 2,
 	"agent_octet_max": 9,
