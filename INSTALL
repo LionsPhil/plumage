@@ -1,19 +1,3 @@
-This is a preliminary install guide that will get you something that works.
-
-This guide assumes you have three machines; one client, one server, and one which will run both the master and the UI.
-
-The client and server should be real hardware, per Polygraph advice.
-
-The master and UI can be a VM; they should never generate heavy load, although you do not want the master to be resource-starved by other VMs on the same host.
-
-Check the example configurations make sense for your machines. 'deploy', below, will use them. Modify it to use copies of them if needed.
-
-Use the 'deploy' script to put the four roles into place. Edit it to choose the machine targets. Read the comments about expected directories and permissions. ('deploy' is useful to quickly put code changes onto the machines while developing.)
-
-Copy examples/initscripts/plumage to /etc/init.d/plumage{UI,Master,Client,Server} as appropriate on each machine, chmod it to root, and make sure it's executable.
-
-Use
-  sudo update-rc.d plumage{UI,Master,Client,Server} defaults
-for each init script to make it start on boot.
-
-If you want to be slightly more secure, chown away /opt/plumage/ directories so that Plumage can't write to itself. This will stop 'deploy' working.
+To get a useful Plumage install set up, please see the wiki at
+https://github.com/LionsPhil/plumage/wiki
+(which you can also clone as https://github.com/LionsPhil/plumage.wiki.git )
