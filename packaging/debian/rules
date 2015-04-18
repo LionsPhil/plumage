@@ -1,0 +1,81 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	# Put the license under the filename Debian expects
+	cp LICENSE COPYING
+	# Copy the common files into place for each component
+	cp -av common/* PlumageUI
+	cp -av common/* PlumageMaster
+	cp -av common/* PlumageClient
+	cp -av common/* PlumageServer
+	# Get MakeMaker to build makefiles for each component
+	(cd PlumageUI     && perl Makefile.PL verbose && make config)
+	(cd PlumageMaster && perl Makefile.PL verbose && make config)
+	(cd PlumageClient && perl Makefile.PL verbose && make config)
+	(cd PlumageServer && perl Makefile.PL verbose && make config)
+	# Base actions
+	dh_auto_configure
+
+override_dh_auto_build:
+	# Compile the high-performance suid wrapper
+	gcc -std=c99 -W -Wall -Wextra -Wno-unused-parameter -Werror -O highperf/plumage_run_suid.c -o highperf/plumage_run_suid
+	# Build each component
+	(cd PlumageUI     && make)
+	(cd PlumageMaster && make)
+	(cd PlumageClient && make)
+	(cd PlumageServer && make)
+	# Base actions
+	dh_auto_build
+
+override_dh_auto_test:
+	# Test each component
+	(cd PlumageUI     && make test TEST_VERBOSE=1)
+	(cd PlumageMaster && make test TEST_VERBOSE=1)
+	(cd PlumageClient && make test TEST_VERBOSE=1)
+	(cd PlumageServer && make test TEST_VERBOSE=1)
+	# Base actions
+	dh_auto_test
+
+override_dh_auto_install:
+	# Don't get MakeMaker to install; we're going to take these applications
+	# as-is, as bundles.
+	# Get MakeMaker to clean up after testing
+	(cd PlumageUI     && make realclean)
+	(cd PlumageMaster && make realclean)
+	(cd PlumageClient && make realclean)
+	(cd PlumageServer && make realclean)
+	# Remove the unit tests
+	rm -r PlumageUI/t
+	rm -r PlumageMaster/t
+	rm -r PlumageClient/t
+	rm -r PlumageServer/t
+	# Make directories
+	mkdir -p     debian/plumage-ui/usr/share/plumage
+	mkdir -p debian/plumage-master/usr/share/plumage
+	mkdir -p debian/plumage-client/usr/share/plumage
+	mkdir -p debian/plumage-server/usr/share/plumage
+	# Copy bundles
+	cp -av PlumageUI         debian/plumage-ui/usr/share/plumage/
+	cp -av PlumageMaster debian/plumage-master/usr/share/plumage/
+	cp -av PlumageClient debian/plumage-client/usr/share/plumage/
+	cp -av PlumageServer debian/plumage-server/usr/share/plumage/
+	# Put the SUID wrapper in place
+	mkdir -p debian/plumage-client-highperf/usr/share/plumage/PlumageClient/bin
+	install -g 0 -o 0 -m 4755 highperf/plumage_run_suid \
+		debian/plumage-client-highperf/usr/share/plumage/PlumageClient/bin/
+
+override_dh_perl:
+	# Look for dependencies in our bundles
+	dh_perl debian/plumage-ui/usr/share/plumage/ \
+		debian/plumage-master/usr/share/plumage/ \
+		debian/plumage-client/usr/share/plumage/ \
+		debian/plumage-server/usr/share/plumage/
+
+override_dh_fixperms:
+	# Don't take away our suid bit
+	dh_fixperms -X plumage_run_suid

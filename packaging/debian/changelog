@@ -1,0 +1,5 @@
+plumage (0.2) UNRELEASED; urgency=low
+
+  * Initial Debian packaging.
+
+ -- LionsPhil <LionsPhil@users.noreply.github.com>  Sat, 18 Apr 2015 14:35:14 +0100
