@@ -10,6 +10,8 @@
  * and change your plumageclient.json configuration to point to it.
  * If used non-root, this program warns but still passes through. */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
