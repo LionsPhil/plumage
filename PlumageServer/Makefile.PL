@@ -13,14 +13,24 @@ WriteMakefile(
     VERSION_FROM        => 'lib/PlumageServer.pm',
     ABSTRACT            => 'Server REST API for Plumage Polygraph Frontend',
     ($eumm_version >= 6.3001
-      ? ('LICENSE'=> 'perl')
+      ? ('LICENSE'=> 'agpl_3')
       : ()),
     PL_FILES            => {},
+    MIN_PERL_VERSION    => '5.18.2',
     PREREQ_PM => {
-        'Test::More' => 0,
-        'YAML'       => 0,
-        'Dancer2'    => 0.11,
-        'Pod::Xhtml' => 1.60,
+        'Dancer2'               => 0.11,
+        'File::Slurp'           => 9999.19,
+        'IO::Scalar'            => 2.110,
+        'IPC::Run'              => 0.92,
+        'JSON'                  => 2.61,
+        'Pod::Xhtml'            => 1.60,
+        'Sys::CPU'              => 0.61,
+        'Template'              => 2.24,
+        'YAML'                  => 0.84,
+    },
+    TEST_REQUIRES       => {
+        'Test::MockModule' => 0.05,
+        'Test::Spec'       => 0.47,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'PlumageServer-*' },
