@@ -11,3 +11,4 @@ If you symlink this to the base of the Plumage sources it should build a binary 
 **Careful:** the `rules` assume you will be building with a disposable chrooted environment, like [sbuild](https://wiki.debian.org/sbuild).
 They'll make a mess of the source directory copying common files around that they don't know how to clean up again.
 Note that, for Ubuntu Trusty at least, some of the dependencies are in `universe`.
+They download and bundle Bootstrap and jQuery, since suitable versions aren't packaged.

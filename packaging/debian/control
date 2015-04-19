@@ -4,6 +4,8 @@ Priority: optional
 Maintainer: Nobody Yet <missing@example.com>
 Standards-Version: 3.9.5
 Build-Depends: debhelper (>= 9),
+ wget,
+ unzip,
  perl,
  libdancer2-perl,
  libdatetime-perl,
