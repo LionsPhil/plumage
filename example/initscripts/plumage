@@ -11,18 +11,19 @@
 
 # Author: Philip Boulain <philip.boulain@smoothwall.net>
 
-# Make copies of this init script named plumage(role) where (role) is one of
-# 'UI', 'Master', 'Client', or 'Server', e.g. 'plumageUI'.
+# Make copies of this init script named plumage-(role) where (role) is one of
+# 'ui', 'master', 'client', or 'server', e.g. 'plumage-ui'.
 # You may want/need to adjust the ports and users below.
 PLUMAGE_ROLE=""
-echo "$0" | grep -q 'UI$'     && PLUMAGE_ROLE="UI"
-echo "$0" | grep -q 'Master$' && PLUMAGE_ROLE="Master"
-echo "$0" | grep -q 'Client$' && PLUMAGE_ROLE="Client"
-echo "$0" | grep -q 'Server$' && PLUMAGE_ROLE="Server"
+echo "$0" | grep -q 'ui$'     && PLUMAGE_ROLE="UI"
+echo "$0" | grep -q 'master$' && PLUMAGE_ROLE="Master"
+echo "$0" | grep -q 'client$' && PLUMAGE_ROLE="Client"
+echo "$0" | grep -q 'server$' && PLUMAGE_ROLE="Server"
 if [ -z "$PLUMAGE_ROLE" ]; then
 	echo "Plumage init script '$0' incorrectly named; cannot deduce role" >&2
 	exit 1
 fi
+PLUMAGE_ROLE_UNIXY=$(echo "$PLUMAGE_ROLE | tr 'A-Z' 'a-z'")
 
 # TODO Make these initialize to constants which are overridden by loading
 #      defaults file (earlier) so hacking the init script is not required.
@@ -32,20 +33,16 @@ PLUMAGE_PORT=5000
 [ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_PORT=5002
 [ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_PORT=5003
 
-PLUMAGE_USER=nobody
-[ "$PLUMAGE_ROLE" = "UI"     ] && PLUMAGE_USER=master
-[ "$PLUMAGE_ROLE" = "Master" ] && PLUMAGE_USER=master
-[ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_USER=client
-[ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_USER=server
+PLUMAGE_USER=plumage-${PLUMAGE_ROLE_UNIXY}
 
-PLUMAGE_GROUP="$PLUMAGE_USER"
+PLUMAGE_GROUP=nogroup
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/opt/plumage/Plumage${PLUMAGE_ROLE}/bin
 DESC="Plumage $PLUMAGE_ROLE server"
-NAME=plumage${PLUMAGE_ROLE}
-PIDFILE=/var/run/plumage${PLUMAGE_ROLE}.pid
-LOGFILE=/var/log/plumage${PLUMAGE_ROLE}.log
+NAME=plumage-${PLUMAGE_ROLE_UNIXY}
+PIDFILE=/var/run/plumage-${PLUMAGE_ROLE_UNIXY}.pid
+LOGFILE=/var/log/plumage-${PLUMAGE_ROLE_UNIXY}.log
 RUNPATH=/run/plumage
 DAEMON=/usr/bin/starman
 DAEMON_ARGS="--listen :${PLUMAGE_PORT} --user ${PLUMAGE_USER} --group ${PLUMAGE_GROUP} --pid ${PIDFILE} --daemonize --error-log ${LOGFILE} bin/app.pl"

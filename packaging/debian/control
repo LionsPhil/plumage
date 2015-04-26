@@ -26,7 +26,7 @@ Homepage: https://github.com/LionsPhil/plumage/
 
 Package: plumage-ui
 Architecture: any
-Depends: ${perl:Depends}, starman,
+Depends: ${perl:Depends}, starman, adduser,
  libdancer2-perl,
  libfile-slurp-perl,
  libhttp-message-perl,
@@ -42,7 +42,7 @@ Description: Plumage Web Polygraph frontend, user interface
 
 Package: plumage-master
 Architecture: any
-Depends: ${perl:Depends}, starman,
+Depends: ${perl:Depends}, starman, adduser,
  libdancer2-perl,
  libdatetime-perl,
  libfile-slurp-perl,
@@ -59,7 +59,7 @@ Description: Plumage Web Polygraph frontend, master controller
 
 Package: plumage-client
 Architecture: any
-Depends: ${perl:Depends}, starman, polygraph,
+Depends: ${perl:Depends}, starman, polygraph, adduser,
  libdancer2-perl,
  libdatetime-perl,
  libfile-slurp-perl,
@@ -78,13 +78,13 @@ Description: Plumage Web Polygraph frontend, client side
 
 Package: plumage-client-highperf
 Architecture: all
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, plumage-client
 Description: Plumage Web Polygraph frontend, client side ulimit raiser
  Setuid root binary to raise the open-files ulimit for Polygraph.
 
 Package: plumage-server
 Architecture: any
-Depends: ${perl:Depends}, starman, polygraph,
+Depends: ${perl:Depends}, starman, polygraph, adduser,
  libdancer2-perl,
  libfile-slurp-perl,
  libio-stringy-perl,

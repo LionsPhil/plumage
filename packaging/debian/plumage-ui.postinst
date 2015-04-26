@@ -1,0 +1,27 @@
+#! /bin/sh
+# postinst script for plumage component
+
+set -e
+
+HUMAN_NAME="Plumage UI"
+UNIXY_NAME=$(echo "$HUMAN_NAME" | tr 'A-Z ' 'a-z-')
+
+case "$1" in
+	configure)
+		# Add user account
+		adduser --system --quiet --home /var/lib/misc --no-create-home \
+			--gecos "${HUMAN_NAME} component" "${UNIXY_NAME}"
+		# Unlock account in case it was locked from previous purge
+		usermod -U -e '' "${UNIXY_NAME}"
+		# update-rc.d should be handled by debhelper
+	abort-upgrade|abort-remove|abort-deconfigure)
+		;;
+	*)
+		echo "postinst called with unknown argument \`$1'" >&2
+		exit 0
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0
