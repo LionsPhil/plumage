@@ -20,7 +20,17 @@
 #include <sys/resource.h>
 
 /* For security you should hardcode this to the plumage_run path. */
-const char* plumage_run = "/opt/plumage/PlumageClient/bin/plumage_run";
+#ifndef PLUMAGE_RUN
+#define PLUMAGE_RUN "/opt/plumage/PlumageClient/bin/plumage_run"
+#endif
+const char* plumage_run = PLUMAGE_RUN ;
+
+/* RLIM_INFINITY would be nice here but is forbidden on stock Ubuntu Server
+ * 14.04 LTS; assume this is generally the case for modern Linux. */
+#ifndef FILE_LIMIT
+#define FILE_LIMIT 128000
+#endif
+const rlim_t file_limit = FILE_LIMIT;
 
 int main(int argc, char** argv) {
 	/* If we are root, set up the environment. */
@@ -28,11 +38,9 @@ int main(int argc, char** argv) {
 		/* Raise the open file limit; our child polygraph processes can easily
 		 * max common defaults under high loads long before exhausting other
 		 * system resources. */
-		/* RLIM_INFINITY would be nice here but is forbidden on stock Ubuntu
-		 * Server 14.04 LTS. */
 		struct rlimit all_you_can_eat;
-		all_you_can_eat.rlim_cur = 128000;
-		all_you_can_eat.rlim_max = 128000;
+		all_you_can_eat.rlim_cur = file_limit;
+		all_you_can_eat.rlim_max = file_limit;
 		if(setrlimit(RLIMIT_NOFILE, &all_you_can_eat) != 0) {
 			perror("plumage_run_suid: could not raise open file limit");
 		}

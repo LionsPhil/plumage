@@ -23,7 +23,9 @@ override_dh_auto_configure:
 
 override_dh_auto_build:
 	# Compile the high-performance suid wrapper
-	gcc -std=c99 -W -Wall -Wextra -Wno-unused-parameter -Werror -O highperf/plumage_run_suid.c -o highperf/plumage_run_suid
+	gcc -std=c99 -W -Wall -Wextra -Wno-unused-parameter -Werror \
+		-D'PLUMAGE_RUN="/usr/share/plumage/PlumageClient/bin/plumage_run"' \
+		-O highperf/plumage_run_suid.c -o highperf/plumage_run_suid
 	# Build each component
 	(cd PlumageUI     && make)
 	(cd PlumageMaster && make)
