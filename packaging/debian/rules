@@ -35,14 +35,15 @@ override_dh_auto_build:
 	# THIS IS VERY NAUGHTY BY NORMAL PACKAGING STANDARDS,
 	# but Ubuntu's jQuery and Bootstrap packages are both a major version out
 	# of date, and copying them into our repo would suck even more.
+	mkdir fetch
 	wget 'https://github.com/twbs/bootstrap/releases/download/v3.3.4/bootstrap-3.3.4-dist.zip' \
-		-O /tmp/bootstrap-3.3.4-dist.zip
-	(cd /tmp && unzip bootstrap-3.3.4-dist.zip)
-	mv -iv /tmp/bootstrap-3.3.4-dist/js/bootstrap.min.js \
+		-O fetch/bootstrap-3.3.4-dist.zip
+	(cd fetch && unzip bootstrap-3.3.4-dist.zip)
+	mv -iv fetch/bootstrap-3.3.4-dist/js/bootstrap.min.js \
 		PlumageUI/public/js/libs/
-	mv -iv /tmp/bootstrap-3.3.4-dist/css/bootstrap.css.map \
+	mv -iv fetch/bootstrap-3.3.4-dist/css/bootstrap.css.map \
 		PlumageUI/public/css/
-	mv -iv /tmp/bootstrap-3.3.4-dist/css/bootstrap.min.css \
+	mv -iv fetch/bootstrap-3.3.4-dist/css/bootstrap.min.css \
 		PlumageUI/public/css/
 	wget 'http://code.jquery.com/jquery-2.1.3.min.js' \
 		-O PlumageUI/public/js/libs/jquery-2.1.3.min.js
