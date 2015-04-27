@@ -58,7 +58,7 @@ describe 'Plumage model' => sub {
 			# Create a virtual environment
 			$tmpdir_handle = File::Temp->newdir(
 				TEMPLATE => 'plumage-test-XXXXXXXX',
-				TEMPDIR => 1);
+				TMPDIR => 1);
 			$tmpdir = $tmpdir_handle->dirname();
 			diag "Virtual environment in $tmpdir\n";
 
@@ -162,7 +162,7 @@ describe 'Plumage model' => sub {
 			# Create a virtual environment
 			$tmpdir_handle = File::Temp->newdir(
 				TEMPLATE => 'plumage-test-XXXXXXXX',
-				TEMPDIR => 1);
+				TMPDIR => 1);
 			$tmpdir = $tmpdir_handle->dirname();
 			diag "Virtual environment in $tmpdir\n";
 
@@ -360,7 +360,7 @@ describe 'Plumage model' => sub {
 			# Create a virtual environment
 			$tmpdir_handle = File::Temp->newdir(
 				TEMPLATE => 'plumage-test-XXXXXXXX',
-				TEMPDIR => 1);
+				TMPDIR => 1);
 			$tmpdir = $tmpdir_handle->dirname();
 			diag "Virtual environment in $tmpdir\n";
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-ENDPOINT="http://polyclient:5000/runs/"
+ENDPOINT="http://polyclient:5002/runs/"
 
 curl -i \
 	--form configuration.tt=@configuration.pg.tt \

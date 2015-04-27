@@ -1,0 +1,31 @@
+# Uncomment the following line to stop the Plumage init scripts from doing
+# anything. (This includes not stopping any running instance.)
+#PLUMAGE_DISABLE=1
+
+# The base installation directory of Plumage components. The init script will
+# expect a Plumage(Role) subdirectory for each component as a bundle.
+#PLUMAGE_INSTALL_BASE=/opt/plumage
+
+# The init script for the Master will set up the persistant store directory
+# where your configurations and run results will be kept with the correct
+# permissions (this is considered user data, so is not package-owned for
+# Debian). This MUST match the value in plumagemaster.json so Plumage itself
+# uses the same one!
+#PLUMAGE_MASTER_STORE=/var/lib/plumage/
+
+# You can set the port Plumage listens on either by defining PLUMAGE_PORT,
+# or a role-specific variable that allows you to use the same defaults file
+# across multiple services
+#PLUMAGE_PORT=5000
+#PLUMAGE_PORT_UI=80
+#PLUMAGE_PORT_MASTER=5001
+#PLUMAGE_PORT_CLIENT=5002
+#PLUMAGE_PORT_SERVER=5003
+
+# You may override PLUMAGE_USER, which defaults to one of
+# plumage-{ui,master,client,server} depending on the role.
+
+# You may override PLUMAGE_GROUP, which defaults to nogroup.
+
+# Overridding the user and group is not recommended if using the Debian package,
+# since it will manage an appropriate system user account for you.

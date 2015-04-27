@@ -8,4 +8,5 @@ client_submission
 
 initscripts
   A standard Debian init script which can be adapted (look at the variables
-  near the top) to run any of the four Plumage components.
+  near the top) to run any of the four Plumage components. The default file is
+  not required, but offers a way to cleaner way to reconfigure the script.

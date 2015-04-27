@@ -1,0 +1,26 @@
+#! /bin/sh
+# postrm script for plumage component
+
+set -e
+
+HUMAN_NAME="Plumage UI"
+UNIXY_NAME=$(echo "$HUMAN_NAME" | tr 'A-Z ' 'a-z-')
+
+case "$1" in
+	remove|upgrade|failed-upgrade|abort-install|abort-upgrade)
+		;;
+	purge|disappear)
+		# Lock user account
+		usermod -L -e 1 "${UNIXY_NAME}"
+		# Don't clear out /var/lib; it's user data
+		# Rest of runtime state is /run which should clear automatically
+		;;
+	*)
+		echo "postrm called with unknown argument \`$1'" >&2
+		exit 0
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0

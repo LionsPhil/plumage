@@ -11,52 +11,60 @@
 
 # Author: Philip Boulain <philip.boulain@smoothwall.net>
 
-# Make copies of this init script named plumage(role) where (role) is one of
-# 'UI', 'Master', 'Client', or 'Server', e.g. 'plumageUI'.
+# Make copies of this init script named plumage-(role) where (role) is one of
+# 'ui', 'master', 'client', or 'server', e.g. 'plumage-ui'.
 # You may want/need to adjust the ports and users below.
 PLUMAGE_ROLE=""
-echo "$0" | grep -q 'UI$'     && PLUMAGE_ROLE="UI"
-echo "$0" | grep -q 'Master$' && PLUMAGE_ROLE="Master"
-echo "$0" | grep -q 'Client$' && PLUMAGE_ROLE="Client"
-echo "$0" | grep -q 'Server$' && PLUMAGE_ROLE="Server"
+echo "$0" | grep -q 'ui$'     && PLUMAGE_ROLE="UI"
+echo "$0" | grep -q 'master$' && PLUMAGE_ROLE="Master"
+echo "$0" | grep -q 'client$' && PLUMAGE_ROLE="Client"
+echo "$0" | grep -q 'server$' && PLUMAGE_ROLE="Server"
 if [ -z "$PLUMAGE_ROLE" ]; then
 	echo "Plumage init script '$0' incorrectly named; cannot deduce role" >&2
 	exit 1
 fi
+PLUMAGE_ROLE_UNIXY=$(echo "$PLUMAGE_ROLE" | tr 'A-Z' 'a-z')
 
-# TODO Make these initialize to constants which are overridden by loading
-#      defaults file (earlier) so hacking the init script is not required.
-PLUMAGE_PORT=5000
-[ "$PLUMAGE_ROLE" = "UI"     ] && PLUMAGE_PORT=80
-[ "$PLUMAGE_ROLE" = "Master" ] && PLUMAGE_PORT=5000
-[ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_PORT=5000
-[ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_PORT=5000
+# Default defaults
+PLUMAGE_INSTALL_BASE=/opt/plumage
+PLUMAGE_MASTER_STORE=/var/lib/plumage
+PLUMAGE_PORT_UI=80
+PLUMAGE_PORT_MASTER=5001
+PLUMAGE_PORT_CLIENT=5002
+PLUMAGE_PORT_SERVER=5003
 
-PLUMAGE_USER=nobody
-[ "$PLUMAGE_ROLE" = "UI"     ] && PLUMAGE_USER=master
-[ "$PLUMAGE_ROLE" = "Master" ] && PLUMAGE_USER=master
-[ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_USER=client
-[ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_USER=server
+# Read configuration variable file if it is present
+NAME=plumage-${PLUMAGE_ROLE_UNIXY}
+[ -r "/etc/default/$NAME" ] && . "/etc/default/$NAME"
 
-PLUMAGE_GROUP="$PLUMAGE_USER"
+# Do nothing if disabled.
+# The reason for the negated flag is so we work without a defaults file.
+[ -n "$PLUMAGE_DISABLE" ] && exit 0
+
+if [ -z "$PLUMAGE_PORT" ]; then
+	[ "$PLUMAGE_ROLE" = "UI"     ] && PLUMAGE_PORT="$PLUMAGE_PORT_UI"
+	[ "$PLUMAGE_ROLE" = "Master" ] && PLUMAGE_PORT="$PLUMAGE_PORT_MASTER"
+	[ "$PLUMAGE_ROLE" = "Client" ] && PLUMAGE_PORT="$PLUMAGE_PORT_CLIENT"
+	[ "$PLUMAGE_ROLE" = "Server" ] && PLUMAGE_PORT="$PLUMAGE_PORT_SERVER"
+fi
+
+[ -z "$PLUMAGE_USER" ] && PLUMAGE_USER=plumage-${PLUMAGE_ROLE_UNIXY}
+
+[ -z "$PLUMAGE_GROUP" ] && PLUMAGE_GROUP=nogroup
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
-PATH=/sbin:/usr/sbin:/bin:/usr/bin:/opt/plumage/Plumage${PLUMAGE_ROLE}/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:${PLUMAGE_INSTALL_BASE}/Plumage${PLUMAGE_ROLE}/bin
 DESC="Plumage $PLUMAGE_ROLE server"
-NAME=plumage${PLUMAGE_ROLE}
-PIDFILE=/var/run/plumage${PLUMAGE_ROLE}.pid
-LOGFILE=/var/log/plumage${PLUMAGE_ROLE}.log
+PIDFILE=/var/run/plumage-${PLUMAGE_ROLE_UNIXY}.pid
+LOGFILE=/var/log/plumage-${PLUMAGE_ROLE_UNIXY}.log
 RUNPATH=/run/plumage
 DAEMON=/usr/bin/starman
 DAEMON_ARGS="--listen :${PLUMAGE_PORT} --user ${PLUMAGE_USER} --group ${PLUMAGE_GROUP} --pid ${PIDFILE} --daemonize --error-log ${LOGFILE} bin/app.pl"
-SSD_ARGS="--chdir /opt/plumage/Plumage${PLUMAGE_ROLE}"
+SSD_ARGS="--chdir ${PLUMAGE_INSTALL_BASE}/Plumage${PLUMAGE_ROLE}"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
-
-# Read configuration variable file if it is present
-[ -r "/etc/default/$NAME" ] && . "/etc/default/$NAME"
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -71,8 +79,15 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
+	# Set up the run directory
 	mkdir -p "$RUNPATH" || exit 2
 	chown "${PLUMAGE_USER}:${PLUMAGE_GROUP}" "$RUNPATH" || exit 2
+
+	# If this is the master, we also need the persistent store directory
+	[ "$PLUMAGE_ROLE" = "Master" ] && {
+		mkdir -p "$PLUMAGE_MASTER_STORE" || exit 2
+		chown "${PLUMAGE_USER}:${PLUMAGE_GROUP}" "$PLUMAGE_MASTER_STORE" || exit 2
+	}
 
 	# Return
 	#   0 if daemon has been started

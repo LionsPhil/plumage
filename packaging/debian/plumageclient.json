@@ -1,12 +1,13 @@
 {
 	"state_dir": "/run/plumage/",
-	"_comment": "If not using the SUID wrapper, you can omit plumage_run_binary to locate it automatically within the Dancer app",
-	"plumage_run_binary": "/opt/plumage/PlumageClient/bin/plumage_run_suid",
 	"tar_binary": "/bin/tar",
 	"polygraph_client_binary": "/usr/bin/polygraph-client",
 	"polygraph_reporter_binary": "/usr/bin/polygraph-reporter",
 	"mv_binary": "/bin/mv",
-	"server_base": "http://polyserver:5003/runs/",
+	"_comment": "If not using the SUID wrapper, remove the following line",
+	"plumage_run_binary": "/usr/share/plumage/PlumageClient/bin/plumage_run_suid",
+
+	"server_base": "http://plumageserver:5003/runs/",
 	"agent_prefix": "10.80.1",
 	"agent_octet_min": 2,
 	"agent_octet_max": 9,

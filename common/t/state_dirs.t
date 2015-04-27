@@ -117,6 +117,17 @@ describe 'Plumage common routines for state handling' => sub {
 				'one.pgd' => '1',
 				'two.pem' => '2',
 			});
+
+			# The ordering is not guaranteed, but we can't really splice a
+			# cmp_bag into this is_deeply, so accept an alternate ordering by
+			# telling lies about what was written in one special case.
+			if($files_written{'/notexist//.supporting.log'}
+				eq "two.pem\0one.pgd") {
+
+				$files_written{'/notexist//.supporting.log'}
+					= "one.pgd\0two.pem";
+			}
+
 			is_deeply(\%files_written, {
 				'/notexist//configuration.pg' => 'CONFIG',
 				'/notexist//one.pgd' => '1',

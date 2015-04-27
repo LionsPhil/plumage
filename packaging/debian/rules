@@ -1,0 +1,145 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	# Put the license under the filename Debian expects
+	cp LICENSE COPYING
+	# Copy the common files into place for each component
+	cp -av common/* PlumageUI
+	cp -av common/* PlumageMaster
+	cp -av common/* PlumageClient
+	cp -av common/* PlumageServer
+	# Get MakeMaker to build makefiles for each component
+	(cd PlumageUI     && perl Makefile.PL verbose && make config)
+	(cd PlumageMaster && perl Makefile.PL verbose && make config)
+	(cd PlumageClient && perl Makefile.PL verbose && make config)
+	(cd PlumageServer && perl Makefile.PL verbose && make config)
+	# Base actions
+	dh_auto_configure
+
+override_dh_auto_build:
+	# Compile the high-performance suid wrapper
+	gcc -std=c99 -W -Wall -Wextra -Wno-unused-parameter -Werror \
+		-D'PLUMAGE_RUN="/usr/share/plumage/PlumageClient/bin/plumage_run"' \
+		-O highperf/plumage_run_suid.c -o highperf/plumage_run_suid
+	# Build each component
+	(cd PlumageUI     && make)
+	(cd PlumageMaster && make)
+	(cd PlumageClient && make)
+	(cd PlumageServer && make)
+	# Grab web dependencies
+	# THIS IS VERY NAUGHTY BY NORMAL PACKAGING STANDARDS,
+	# but Ubuntu's jQuery and Bootstrap packages are both a major version out
+	# of date, and copying them into our repo would suck even more.
+	mkdir fetch
+	wget 'https://github.com/twbs/bootstrap/releases/download/v3.3.4/bootstrap-3.3.4-dist.zip' \
+		-O fetch/bootstrap-3.3.4-dist.zip
+	(cd fetch && unzip bootstrap-3.3.4-dist.zip)
+	mv -v fetch/bootstrap-3.3.4-dist/js/bootstrap.min.js \
+		PlumageUI/public/js/libs/
+	mv -v fetch/bootstrap-3.3.4-dist/css/bootstrap.css.map \
+		PlumageUI/public/css/
+	mv -v fetch/bootstrap-3.3.4-dist/css/bootstrap.min.css \
+		PlumageUI/public/css/
+	wget 'http://code.jquery.com/jquery-2.1.3.min.js' \
+		-O PlumageUI/public/js/libs/jquery-2.1.3.min.js
+	# Base actions
+	dh_auto_build
+
+override_dh_auto_test:
+	# Test each component
+	(cd PlumageUI     && make test TEST_VERBOSE=1)
+	(cd PlumageMaster && make test TEST_VERBOSE=1)
+	(cd PlumageClient && make test TEST_VERBOSE=1)
+	(cd PlumageServer && make test TEST_VERBOSE=1)
+	# Base actions
+	dh_auto_test
+
+override_dh_auto_install:
+	# Don't get MakeMaker to install; we're going to take these applications
+	# as-is, as bundles.
+	# Get MakeMaker to clean up after testing
+	(cd PlumageUI     && make realclean)
+	(cd PlumageMaster && make realclean)
+	(cd PlumageClient && make realclean)
+	(cd PlumageServer && make realclean)
+	# Remove the unit tests
+	rm -r PlumageUI/t
+	rm -r PlumageMaster/t
+	rm -r PlumageClient/t
+	rm -r PlumageServer/t
+	# Make directories
+	mkdir -p     debian/plumage-ui/usr/share/plumage
+	mkdir -p debian/plumage-master/usr/share/plumage
+	mkdir -p debian/plumage-client/usr/share/plumage
+	mkdir -p debian/plumage-server/usr/share/plumage
+	# Copy bundles
+	cp -av PlumageUI         debian/plumage-ui/usr/share/plumage/
+	cp -av PlumageMaster debian/plumage-master/usr/share/plumage/
+	cp -av PlumageClient debian/plumage-client/usr/share/plumage/
+	cp -av PlumageServer debian/plumage-server/usr/share/plumage/
+	# Put the SUID wrapper in place
+	mkdir -p debian/plumage-client-highperf/usr/share/plumage/PlumageClient/bin
+	install -g 0 -o 0 -m 4755 highperf/plumage_run_suid \
+		debian/plumage-client-highperf/usr/share/plumage/PlumageClient/bin/
+	# Put the configurations in place
+	install -D -g 0 -o 0 -m 0644 debian/plumageui.json \
+		debian/plumage-ui/etc/plumage/ui.json
+	install -D -g 0 -o 0 -m 0644 debian/plumagemaster.json \
+		debian/plumage-master/etc/plumage/master.json
+	install -D -g 0 -o 0 -m 0644 debian/plumageclient.json \
+		debian/plumage-client/etc/plumage/client.json
+	install -D -g 0 -o 0 -m 0644 debian/plumageserver.json \
+		debian/plumage-server/etc/plumage/server.json
+	# Put the init script into place for each component
+	install -g 0 -m 0 -m 0755 example/initscripts/plumage \
+		debian/plumage-ui.init
+	install -g 0 -m 0 -m 0755 example/initscripts/plumage \
+		debian/plumage-master.init
+	install -g 0 -m 0 -m 0755 example/initscripts/plumage \
+		debian/plumage-client.init
+	install -g 0 -m 0 -m 0755 example/initscripts/plumage \
+		debian/plumage-server.init
+	# And the defaults file
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-ui.default
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-master.default
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-client.default
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-server.default
+	# Customize the defaults for Debian
+	for ROLE in ui master client server; do \
+		sed -i 's/^#PLUMAGE_INSTALL_BASE.*/PLUMAGE_INSTALL_BASE=\/usr\/share\/plumage/' \
+			debian/plumage-$${ROLE}.default ; \
+	done
+	# Template out the postinst/postrm from UI's version
+	for SCRIPT in postinst postrm; do \
+		sed 's/HUMAN_NAME="Plumage UI"/HUMAN_NAME="Plumage Master"/' \
+			< debian/plumage-ui.$${SCRIPT} \
+			> debian/plumage-master.$${SCRIPT} && \
+		sed 's/HUMAN_NAME="Plumage UI"/HUMAN_NAME="Plumage Client"/' \
+			< debian/plumage-ui.$${SCRIPT} \
+			> debian/plumage-client.$${SCRIPT} && \
+		sed 's/HUMAN_NAME="Plumage UI"/HUMAN_NAME="Plumage Server"/' \
+			< debian/plumage-ui.$${SCRIPT} \
+			> debian/plumage-server.$${SCRIPT} ; \
+	done
+	# Note that {inst,rm} patterns do not work in dash
+	chmod 0755 debian/plumage-*.post*
+
+override_dh_perl:
+	# Look for dependencies in our bundles
+	dh_perl debian/plumage-ui/usr/share/plumage/ \
+		debian/plumage-master/usr/share/plumage/ \
+		debian/plumage-client/usr/share/plumage/ \
+		debian/plumage-server/usr/share/plumage/
+
+override_dh_fixperms:
+	# Don't take away our suid bit
+	dh_fixperms -X plumage_run_suid

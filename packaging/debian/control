@@ -1,0 +1,98 @@
+Source: plumage
+Section: universe/net
+Priority: optional
+Maintainer: Nobody Yet <missing@example.com>
+Standards-Version: 3.9.5
+Build-Depends: debhelper (>= 9),
+ wget,
+ unzip,
+ perl,
+ libdancer2-perl,
+ libdatetime-perl,
+ libfile-slurp-perl,
+ libhttp-message-perl,
+ libio-stringy-perl,
+ libipc-run-perl,
+ libjson-perl,
+ libwww-perl,
+ libpod-xhtml-perl,
+ libsys-cpu-perl,
+ libtemplate-perl,
+ libtry-tiny-perl,
+ libyaml-perl,
+ libtest-mockmodule-perl,
+ libtest-spec-perl
+Homepage: https://github.com/LionsPhil/plumage/
+
+Package: plumage-ui
+Architecture: any
+Depends: ${perl:Depends}, starman, adduser,
+ libdancer2-perl,
+ libfile-slurp-perl,
+ libhttp-message-perl,
+ libio-stringy-perl,
+ libipc-run-perl,
+ libjson-perl,
+ libwww-perl,
+ libpod-xhtml-perl,
+ libtemplate-perl,
+ libtry-tiny-perl,
+ libyaml-perl
+Description: Plumage Web Polygraph frontend, user interface
+
+Package: plumage-master
+Architecture: any
+Depends: ${perl:Depends}, starman, adduser,
+ libdancer2-perl,
+ libdatetime-perl,
+ libfile-slurp-perl,
+ libhttp-message-perl,
+ libio-stringy-perl,
+ libipc-run-perl,
+ libjson-perl,
+ libwww-perl,
+ libpod-xhtml-perl,
+ libtemplate-perl,
+ libtry-tiny-perl,
+ libyaml-perl
+Description: Plumage Web Polygraph frontend, master controller
+
+Package: plumage-client
+Architecture: any
+Depends: ${perl:Depends}, starman, polygraph, adduser,
+ libdancer2-perl,
+ libdatetime-perl,
+ libfile-slurp-perl,
+ libhttp-message-perl,
+ libio-stringy-perl,
+ libipc-run-perl,
+ libjson-perl,
+ libwww-perl,
+ libpod-xhtml-perl,
+ libsys-cpu-perl,
+ libtemplate-perl,
+ libtry-tiny-perl,
+ libyaml-perl
+Recommends: polygraph, plumage-client-highperf
+Description: Plumage Web Polygraph frontend, client side
+
+Package: plumage-client-highperf
+Architecture: all
+Depends: ${shlibs:Depends}, plumage-client
+Description: Plumage Web Polygraph frontend, client side ulimit raiser
+ Setuid root binary to raise the open-files ulimit for Polygraph.
+
+Package: plumage-server
+Architecture: any
+Depends: ${perl:Depends}, starman, polygraph, adduser,
+ libdancer2-perl,
+ libfile-slurp-perl,
+ libio-stringy-perl,
+ libipc-run-perl,
+ libjson-perl,
+ libpod-xhtml-perl,
+ libsys-cpu-perl,
+ libtemplate-perl,
+ libyaml-perl
+Recommends: polygraph
+Description: Plumage Web Polygraph frontend, server side
