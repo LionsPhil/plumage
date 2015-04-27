@@ -13,7 +13,8 @@ case "$1" in
 			--gecos "${HUMAN_NAME} component" "${UNIXY_NAME}"
 		# Unlock account in case it was locked from previous purge
 		usermod -U -e '' "${UNIXY_NAME}"
-		# update-rc.d should be handled by debhelper
+		# update-rc.d is handled by debhelper
+		;;
 	abort-upgrade|abort-remove|abort-deconfigure)
 		;;
 	*)

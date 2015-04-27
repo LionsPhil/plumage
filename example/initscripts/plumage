@@ -23,10 +23,11 @@ if [ -z "$PLUMAGE_ROLE" ]; then
 	echo "Plumage init script '$0' incorrectly named; cannot deduce role" >&2
 	exit 1
 fi
-PLUMAGE_ROLE_UNIXY=$(echo "$PLUMAGE_ROLE | tr 'A-Z' 'a-z'")
+PLUMAGE_ROLE_UNIXY=$(echo "$PLUMAGE_ROLE" | tr 'A-Z' 'a-z')
 
 # Default defaults
-PLUMAGE_MASTER_STORE=/var/lib/plumage/
+PLUMAGE_INSTALL_BASE=/opt/plumage
+PLUMAGE_MASTER_STORE=/var/lib/plumage
 PLUMAGE_PORT_UI=80
 PLUMAGE_PORT_MASTER=5001
 PLUMAGE_PORT_CLIENT=5002
@@ -52,14 +53,14 @@ fi
 [ -z "$PLUMAGE_GROUP" ] && PLUMAGE_GROUP=nogroup
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
-PATH=/sbin:/usr/sbin:/bin:/usr/bin:/opt/plumage/Plumage${PLUMAGE_ROLE}/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:${PLUMAGE_INSTALL_BASE}/Plumage${PLUMAGE_ROLE}/bin
 DESC="Plumage $PLUMAGE_ROLE server"
 PIDFILE=/var/run/plumage-${PLUMAGE_ROLE_UNIXY}.pid
 LOGFILE=/var/log/plumage-${PLUMAGE_ROLE_UNIXY}.log
 RUNPATH=/run/plumage
 DAEMON=/usr/bin/starman
 DAEMON_ARGS="--listen :${PLUMAGE_PORT} --user ${PLUMAGE_USER} --group ${PLUMAGE_GROUP} --pid ${PIDFILE} --daemonize --error-log ${LOGFILE} bin/app.pl"
-SSD_ARGS="--chdir /opt/plumage/Plumage${PLUMAGE_ROLE}"
+SSD_ARGS="--chdir ${PLUMAGE_INSTALL_BASE}/Plumage${PLUMAGE_ROLE}"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed

@@ -2,6 +2,10 @@
 # anything. (This includes not stopping any running instance.)
 #PLUMAGE_DISABLE=1
 
+# The base installation directory of Plumage components. The init script will
+# expect a Plumage(Role) subdirectory for each component as a bundle.
+#PLUMAGE_INSTALL_BASE=/opt/plumage
+
 # The init script for the Master will set up the persistant store directory
 # where your configurations and run results will be kept with the correct
 # permissions (this is considered user data, so is not package-owned for

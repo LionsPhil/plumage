@@ -113,6 +113,11 @@ override_dh_auto_install:
 		debian/plumage-client.default
 	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
 		debian/plumage-server.default
+	# Customize the defaults for Debian
+	for ROLE in ui master client server; do \
+		sed -i 's/^#PLUMAGE_INSTALL_BASE.*/PLUMAGE_INSTALL_BASE=\/usr\/share\/plumage/' \
+			debian/plumage-$${ROLE}.default ; \
+	done
 	# Template out the postinst/postrm from UI's version
 	for SCRIPT in postinst postrm; do \
 		sed 's/HUMAN_NAME="Plumage UI"/HUMAN_NAME="Plumage Master"/' \
