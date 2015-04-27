@@ -2,6 +2,13 @@
 # anything. (This includes not stopping any running instance.)
 #PLUMAGE_DISABLE=1
 
+# The init script for the Master will set up the persistant store directory
+# where your configurations and run results will be kept with the correct
+# permissions (this is considered user data, so is not package-owned for
+# Debian). This MUST match the value in plumagemaster.json so Plumage itself
+# uses the same one!
+#PLUMAGE_MASTER_STORE=/var/lib/plumage/
+
 # You can set the port Plumage listens on either by defining PLUMAGE_PORT,
 # or a role-specific variable that allows you to use the same defaults file
 # across multiple services

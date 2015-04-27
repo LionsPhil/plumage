@@ -26,6 +26,7 @@ fi
 PLUMAGE_ROLE_UNIXY=$(echo "$PLUMAGE_ROLE | tr 'A-Z' 'a-z'")
 
 # Default defaults
+PLUMAGE_MASTER_STORE=/var/lib/plumage/
 PLUMAGE_PORT_UI=80
 PLUMAGE_PORT_MASTER=5001
 PLUMAGE_PORT_CLIENT=5002
@@ -77,8 +78,15 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
+	# Set up the run directory
 	mkdir -p "$RUNPATH" || exit 2
 	chown "${PLUMAGE_USER}:${PLUMAGE_GROUP}" "$RUNPATH" || exit 2
+
+	# If this is the master, we also need the persistent store directory
+	[ "$PLUMAGE_ROLE" = "Master" ] && {
+		mkdir -p "$PLUMAGE_MASTER_STORE" || exit 2
+		chown "${PLUMAGE_USER}:${PLUMAGE_GROUP}" "$PLUMAGE_MASTER_STORE" || exit 2
+	}
 
 	# Return
 	#   0 if daemon has been started
