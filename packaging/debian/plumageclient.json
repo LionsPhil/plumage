@@ -1,0 +1,29 @@
+{
+	"state_dir": "/run/plumage/",
+	"tar_binary": "/bin/tar",
+	"polygraph_client_binary": "/usr/bin/polygraph-client",
+	"polygraph_reporter_binary": "/usr/bin/polygraph-reporter",
+	"mv_binary": "/bin/mv",
+	"_comment": "If not using the SUID wrapper, remove the following line",
+	"plumage_run_binary": "/usr/share/plumage/PlumageClient/bin/plumage_run_suid",
+
+	"server_base": "http://plumageserver:5003/runs/",
+	"agent_prefix": "10.80.1",
+	"agent_octet_min": 2,
+	"agent_octet_max": 9,
+
+	"host_parameters": {
+		"host_client_ips": [
+			"10.80.1.2",
+			"10.80.1.3",
+			"10.80.1.4",
+			"10.80.1.5",
+			"10.80.1.6",
+			"10.80.1.7",
+			"10.80.1.8",
+			"10.80.1.9"
+		],
+		"host_server_ip": "10.80.2.2",
+		"host_server_name": "agent00.polygraph"
+	}
+}

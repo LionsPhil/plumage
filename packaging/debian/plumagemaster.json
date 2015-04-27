@@ -1,0 +1,6 @@
+{
+	"store_dir": "/var/lib/plumage/",
+	"client_bases": [
+		"http://plumageclient:5002/"
+	]
+}

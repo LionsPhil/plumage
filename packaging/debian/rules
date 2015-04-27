@@ -86,6 +86,15 @@ override_dh_auto_install:
 	mkdir -p debian/plumage-client-highperf/usr/share/plumage/PlumageClient/bin
 	install -g 0 -o 0 -m 4755 highperf/plumage_run_suid \
 		debian/plumage-client-highperf/usr/share/plumage/PlumageClient/bin/
+	# Put the configurations in place
+	install -D -g 0 -o 0 -m 0644 debian/plumageui.json \
+		debian/plumage-ui/etc/plumage/ui.json
+	install -D -g 0 -o 0 -m 0644 debian/plumagemaster.json \
+		debian/plumage-master/etc/plumage/master.json
+	install -D -g 0 -o 0 -m 0644 debian/plumageclient.json \
+		debian/plumage-client/etc/plumage/client.json
+	install -D -g 0 -o 0 -m 0644 debian/plumageserver.json \
+		debian/plumage-server/etc/plumage/server.json
 	# Put the init script into place for each component
 	install -g 0 -m 0 -m 0755 example/initscripts/plumage \
 		debian/plumage-ui.init
