@@ -104,6 +104,15 @@ override_dh_auto_install:
 		debian/plumage-client.init
 	install -g 0 -m 0 -m 0755 example/initscripts/plumage \
 		debian/plumage-server.init
+	# And the defaults file
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-ui.default
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-master.default
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-client.default
+	install -g 0 -m 0 -m 0644 example/initscripts/plumage.default \
+		debian/plumage-server.default
 	# Template out the postinst/postrm from UI's version
 	for SCRIPT in postinst postrm; do \
 		sed 's/HUMAN_NAME="Plumage UI"/HUMAN_NAME="Plumage Master"/' \
