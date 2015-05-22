@@ -1,5 +1,5 @@
 {
-	"state_dir": "/run/plumage/",
+	"state_dir": "/run/plumage/client",
 	"tar_binary": "/bin/tar",
 	"polygraph_client_binary": "/usr/bin/polygraph-client",
 	"polygraph_reporter_binary": "/usr/bin/polygraph-reporter",

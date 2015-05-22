@@ -1,5 +1,5 @@
 {
-	"state_dir": "/run/plumage",
+	"state_dir": "/run/plumage/server",
 	"polygraph_server_binary": "/usr/bin/polygraph-server",
 
 	"agent_prefix": "10.80.2",
