@@ -45,6 +45,8 @@ override_dh_auto_build:
 		PlumageUI/public/css/
 	mv -v fetch/bootstrap-3.3.4-dist/css/bootstrap.min.css \
 		PlumageUI/public/css/
+	mv -v fetch/bootstrap-3.3.4-dist/fonts \
+		PlumageUI/public/
 	wget 'http://code.jquery.com/jquery-2.1.3.min.js' \
 		-O PlumageUI/public/js/libs/jquery-2.1.3.min.js
 	# Base actions
