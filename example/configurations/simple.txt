@@ -1,0 +1,56 @@
+/* This is pretty much /usr/share/polygraph/workloads/simple.pg
+ * with comments stripped for conciseness and some small edits.
+ * Look at http://www.web-polygraph.org/docs/userman/simple.html
+ * if you're learning PGL too! */
+
+Content SimpleContent = {
+    size = exp(13KB);
+    cachable = 80%;
+};
+
+Server S = {
+    kind = "S101";
+    contents = [ SimpleContent ];
+    direct_access = contents;
+
+	/* If you're not using host parameters, replace
+	 *  [% host_server_ip %]
+	 * with the address of your server. */
+    addresses = [ '[% host_server_ip %]:9090' ];
+};
+
+Robot R = {
+    kind = "R101";
+    pop_model = { pop_distr = popUnif(); };
+    recurrence = 55% / SimpleContent.cachable;
+    origins = S.addresses;
+
+	/* If we don't include a value here, the robots will run flat out.
+	 * This would probably be an unpleasant surprise for you for your first
+	 * test run! Normally you want to hardcode this, and have a parameter
+	 * control the number of robots, not the rate of requests of each robot.
+	 */
+	req_rate = 1/sec;
+
+	/* If you dont' have a proxy to test yet, you can remove this. */
+	http_proxies = [ '[% proxy_ip %]:[% proxy_port %]' ];
+
+	/* If you're not using host parameters, replace everything inside the
+	 * addresses array with the address of your client in single quotes.
+	 * See the multi-process example for how to control the number of robots
+	 * nicely when you have many addresses. */
+    addresses = [
+		[% FOREACH host_client_ip IN host_client_ips %]
+			'[% host_client_ip %]' [% IF ! loop.last() %],[% END %]
+		[% END %]
+	];
+};
+
+/* You've got to have a schedule, else the run will never end successfully. */
+Phase phFullOn = {
+	name = "full_on";
+	goal.duration = 2min;
+};
+schedule(phFullOn);
+
+use(S, R);
