@@ -1,6 +1,9 @@
 host_configs
   Configuration files for use by Plumage instances. These are put into place by
-  deploy.
+  deploy. (Not to be confused with test configuration templates.)
+
+configurations
+  Test configuration templates, that you can use as a basis for your own.
 
 client_submission
   A configuration template, supporting file, and shell script to submit them

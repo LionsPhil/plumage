@@ -1,0 +1,169 @@
+/*
+ * Example multi-client-process configuration template.
+ * Takes these parameters:
+ *   proxy_ip
+ *   proxy_port
+ *   clients
+ *   duration
+ * And a supporting file sizes.pgd.
+ * The proxy should be set up to point to a DNS server that can resolve the
+ * agent names in the host configuration.
+ */
+
+//plumage//reportname//Multi-process_example_on_[% proxy_ip %]_with_[% clients %]_clients
+
+/*
+ * To make the PGL below simpler, we do as much Plumage-specific template magic
+ * as we can early on, defining PGL variables. Most importantly, we ned to split
+ * the total number of clients requested into partitions for the number of host
+ * client IPs we have from the host variables. This means we can take a nice,
+ * simple run parameter and have it work comparably across different
+ * client/server pairs with potentially different sizes of address range (and
+ * numbers of processes) available, even if such results aren't very comparable.
+ *
+ * Look for the comment block near the end for how we then apply this.
+ */
+
+// Run configuration parameters
+[%
+# Subdivide the clients into portions for each agent
+# TODO Do better with Bresenham's algorithm
+# If any polygraph instance ends up with zero IPs, it will die :(
+# However this is only likely for *very* small client numbers.
+clients_each = clients div host_client_ips.size;
+clients_last = clients - (clients_each * (host_client_ips.size - 1)); # remainder
+%]
+
+addr param_proxy = '[% proxy_ip %]:[% proxy_port %]';
+int  param_clients_each = [% clients_each %];
+int  param_clients_last = [% clients_last %];
+time param_full_on_duration = [% duration %]min;
+
+// Host configuration parameters
+
+[% host_client_ip_num = 0;
+FOREACH host_client_ip IN host_client_ips %]
+addr host_client_ip_[% host_client_ip_num %] = '[% host_client_ip %]';
+[% host_client_ip_num = host_client_ip_num + 1;
+END %]
+addr host_server_ip   = '[% host_server_ip   %]:9090';
+addr host_server_name = '[% host_server_name %]:9090';
+
+/*
+ * The rest of this is pretty much plain Polygraph.
+ * This is a fairly boring, standard configuration which should get you started
+ * with some traffic which is vaguely plausible, but the numbers are made up.
+ * To use this for real testing, do some profiling of the traffic you want to
+ * emulate and adjust as appropriate.
+ */
+
+ObjLifeCycle olcNews = {
+	length = exp(2hour);
+	variance = 60%;
+	with_lmt = 33%;
+	expires = [
+		lmt + exp(1hour)   : 25%, // half a cycle, on average
+		now + const(15min) : 75%  // conservative estimate
+	];
+};
+
+Mime mimeHTML = {
+	type = "text/html";
+	extensions = [ "": 50%, ".html", ".htm", ".cgi", ".php", ".asp" ];
+};
+
+Content cntHTML = {
+	kind = "HTML content";
+	mime = mimeHTML;
+	size = table("sizes.pgd", "size");
+	obj_life_cycle = olcNews;
+	cachable = 40%;
+};
+
+Content[] cntMix = [
+	cntHTML
+];
+
+AddrMap amap = {
+	addresses = [ host_server_ip ];
+	names = [ host_server_name ];
+};
+
+Server srvPlain = {
+	kind = "Plain HTTP server";
+	addresses = [ host_server_ip ];
+	contents = [ cntMix ];
+	direct_access = [ cntMix ];
+	xact_think = norm(100ms, 30ms);
+	pconn_use_lmt = const(100);
+};
+
+PopModel pmDefault = {
+	pop_distr = popUnif();
+	hot_set_frac       =  1%;
+	hot_set_prob       = 10%;
+	bhr_discrimination = 90%;
+};
+
+MultiRange rangeAny = {
+	first_range_start_relative = unif(0.0, 1.0);
+	range_length_relative = unif(0.0, 1.0);
+	range_count = logn(1, 1);
+};
+
+Robot robPlain = {
+
+/*
+ * We use Template::Toolkit here to write out an addresses array in the PGL
+ * which contains all of the host client IPs from our host configuration, with
+ * the right number of clients each based on dividing through our desired total.
+ */
+
+	addresses = [
+[% host_client_ip_num = 0;
+FOREACH host_client_ip IN host_client_ips ;
+	IF loop.last() %]
+		host_client_ip_[% host_client_ip_num %] ** param_clients_last
+[%	ELSE %]
+		host_client_ip_[% host_client_ip_num %] ** param_clients_each,
+[%	END;
+	host_client_ip_num = host_client_ip_num + 1;
+END %]
+	];
+	http_proxies = [ param_proxy ];
+	origins = [ host_server_name ];
+
+	req_rate = 0.4/sec;
+	recurrence = 10%;
+	embed_recur = 100%;
+	pop_model = pmDefault;
+	req_types = [ "Basic", "Ims200": 15%, "Ims304": 5%, "Reload": 1%, "Range": 0.1% ];
+	req_methods = [ "GET", "HEAD": 1%, "POST": 1% ];
+	ranges = [ rangeAny ];
+	post_contents = [ cntHTML ];
+	accept_content_encodings = [ "gzip", "identity" ];
+};
+
+Phase phRampUp = {
+	name = "ramp_up";
+	goal.duration = 1min;
+	populus_factor_beg =   0%;
+	populus_factor_end = 100%;
+};
+
+Phase phFullOn = {
+	name = "full_on";
+	goal.duration = param_full_on_duration;
+};
+
+Phase phStepDown = {
+	name = "step_down";
+	goal.duration = 1min;
+	populus_factor_beg = 50%;
+	populus_factor_end = 50%;
+};
+
+schedule(phRampUp, phFullOn, phStepDown);
+
+use(amap);
+use(srvPlain, robPlain);
