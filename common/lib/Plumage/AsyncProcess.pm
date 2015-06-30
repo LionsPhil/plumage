@@ -100,7 +100,7 @@ sub spawn {
 		} elsif($pid) {
 
 			# We're still the intermediate process.
-			# Record the pid of the server process (with newline for
+			# Record the pid of the grandchild process (with newline for
 			# convention).
 			unless(write_file(
 				$pidfile,
