@@ -68,3 +68,9 @@ nav {
 #cfg-template {
 	height: 24em;
 }
+
+/* Error page */
+
+#dead-parrot {
+	font-weight: bold;
+}

@@ -72,7 +72,7 @@ sub _request_json {
 			die "API call JSON parse failed: ${_}Got:\n".Data::Dumper::Dumper($content)."\n";
 		};
 	} catch {
-		die "${_}While attempting: ".$request->as_string();
+		die "${_}\nWhile attempting:\n".$request->as_string();
 	};
 
 	return $data;

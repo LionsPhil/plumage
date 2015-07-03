@@ -23,3 +23,10 @@ template: "template_toolkit"
 #    template:
 #        template_toolkit:
 #            PRE_CHOMP: 1
+
+# Include backtraces in any error messages.
+traces: 1
+# error_template is not effective in the version of Dancer2 shipped with Ubuntu
+# 14.04 due to https://github.com/PerlDancer/Dancer2/issues/565 , so the file
+# is just present as 500.tt for now. We possibly want to handle other codes
+# differently anyway, and may even move to using the on_route_exception hook.
