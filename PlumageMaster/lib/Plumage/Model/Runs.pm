@@ -307,7 +307,13 @@ sub set_results {
 	) or die "Error listing result tarball: $?, $err";
 	warn "Result tarball list warning: $err" if $err; # must be nonfatal by this point
 
-	my %listing = map { $_ => 1 } split(/\n/, $out);
+	my %listing = map {
+		# This *could* just be $_ => 1, but for some tar implementations not
+		# including the directory itself, just filenames under it.
+		my $base = $_;
+		$base =~ s!/.*!/!;
+		$base => 1;
+	} split(/\n/, $out);
 	@extractables_optional = grep {
 		# Tar implementations are inconsistent over trailing / on directories
 		exists $listing{$_} || # Archive::Tar
