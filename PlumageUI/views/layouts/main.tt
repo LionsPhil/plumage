@@ -31,7 +31,7 @@ See LICENSE.txt for details.
 [% content %]
 
 		<footer class="footer"><div class="container"><div class="row">
-			<div class="col-sm-6 text-muted">Plumage &copy; 2014&thinsp;&mdash;&thinsp;2015 Philip Boulain</div>
+			<div class="col-sm-6 text-muted">Plumage &copy; 2014&thinsp;&ndash;&thinsp;2015 Philip Boulain</div>
 			<div class="col-sm-6 text-muted text-right">
 				<a href="https://github.com/LionsPhil/plumage">Source code</a> &bull;
 				<a href="[% vars.master_base %]doc">API documentation</a>
