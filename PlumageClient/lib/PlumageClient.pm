@@ -11,7 +11,7 @@ use Dancer2;
 use PlumageClientRun;
 use Plumage::PublishAPI;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 =head1 Plumage client
 

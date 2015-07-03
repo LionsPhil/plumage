@@ -8,7 +8,7 @@ use strict;
 package PlumageUI;
 use Dancer2;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 use File::Slurp qw();
 use HTTP::Request::Common;

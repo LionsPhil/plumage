@@ -11,7 +11,7 @@ use Dancer2;
 use PolygraphServerRun;
 use Plumage::PublishAPI;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 =head1 Plumage server
 
